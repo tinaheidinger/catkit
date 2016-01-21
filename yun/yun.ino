@@ -8,9 +8,9 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600); // for debugging
   pinMode(13,OUTPUT); // turn on LED while bridge begins
-  digitalWrite(13, LOW);
+  digitalWrite(13, HIGH);
   Bridge.begin();
-  digitalWrite(13, HIGH); // bridge is ready, turn off LED
+  digitalWrite(13, LOW); // bridge is ready, turn off LED
 
   server.listenOnLocalhost(); // server listens to connections from localhost on port 5555
   server.begin(); // start server
@@ -35,81 +35,52 @@ void loop() {
  * passes information to respective functions
  */
 void process(YunClient client) {
-  String command = client.readStringUntil('/');
+  String command = client.readStringUntil('\r');
 
-  if (command == "digital") {
-    digitalCommand(client);
+  if (command == "feed") {
+    feedCommand(client);
   }
-  if (command == "analog") {
-    analogCommand(client);
+  if (command == "fill") {
+    fillCommand(client);
   }
-  if (command == "mode") {
-    modeCommand(client);
+  if (command == "play") {
+    playCommand(client);
   }
-}
-
-/**
- * Deals with digital commands
- */
-void digitalCommand(YunClient client) {
-  int pin;
-  int value;
-  pin = client.parseInt(); // parse request for pin
-
-  if (client.read() == '/') { // URL will have value 1 or 0
-    value = client.parseInt();
-    digitalWrite(pin, value);
-  } 
-  else {
-    value = digitalRead(pin);
-  }
-  Bridge.put("D" + pin, String(value)); // send key and value to bridge
-}
-
-/**
- * Deals with analog commands
- */
-void analogCommand(YunClient client) {
-  int pin;
-  int value;
-
-  pin = client.parseInt();
-
-  if (client.read() == '/') {
-    value = client.parseInt();
-    analogWrite(pin, value);
-    Bridge.put("D" + pin, String(value)); // send key and value to bridge
-  } else {
-    value = analogRead(pin);
-    Bridge.put("A" + pin, String(value));  
+  if (command == "status") {
+    statusCommand(client);
   }
 }
 
-/**
- * Deals with mode commands
- */
-void modeCommand(YunClient client) {
-  int pin;
-  pin = client.parseInt();
+void feedCommand(YunClient client) {
+  client.println("Status: 200");
+  client.println("Content-type: application/json");
+  client.println();
+  // return ok status
+  client.print("{\"fed\":\"ok\"}");
+}
 
-  if (client.read() != '/') {
-    client.println(F("error")); // invalid URL
-    return;
-  }
+void fillCommand(YunClient client) {
+  client.println("Status: 200");
+  client.println("Content-type: application/json");
+  client.println();
+  // return ok status
+  client.print("{\"filled\":\"ok\"}");
+}
 
-  String mode = client.readStringUntil('\r');
+void playCommand(YunClient client) {
+  client.println("Status: 200");
+  client.println("Content-type: application/json");
+  client.println();
+  // return ok status
+  client.print("{\"played\":\"ok\"}");
+}
 
-  if (mode == "input") {
-    pinMode(pin, INPUT);
-    return;
-  }
-
-  if (mode == "output") {
-    pinMode(pin, OUTPUT);
-    return;
-  }
-
-  client.print(F("error: invalid mode"));
+void statusCommand(YunClient client) {
+  client.println("Status: 200");
+  client.println("Content-type: application/json");
+  client.println();
+  // return ok status
+  client.print("{\"status\":\"ok\"}");
 }
 
 
